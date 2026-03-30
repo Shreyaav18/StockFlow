@@ -1,0 +1,182 @@
+@using StockFlow.Web.DTOs.Report
+@using StockFlow.Web.DTOs.Shipment
+@using StockFlow.Web.DTOs.Process
+@{
+    ViewData["Title"] = "Dashboard";
+    var stats = ViewBag.Stats as ProcessingStatsViewModel;
+    var pending = ViewBag.PendingShipments as IEnumerable<ShipmentViewModel> ?? Enumerable.Empty<ShipmentViewModel>();
+    var approvals = ViewBag.PendingApprovals as IEnumerable<ProcessedItemViewModel> ?? Enumerable.Empty<ProcessedItemViewModel>();
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Dashboard</div>
+        <div class="sf-page-sub">Welcome back, @User.Identity?.Name</div>
+    </div>
+    <a href="/Shipment/Receive" class="sf-btn sf-btn-primary">+ Receive shipment</a>
+</div>
+
+<div class="sf-stat-grid">
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Total shipments</div>
+        <div class="sf-stat-value">@(stats?.TotalShipments ?? 0)</div>
+        <div class="sf-stat-sub">All time</div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Pending processing</div>
+        <div class="sf-stat-value accent">@(stats?.TotalPending ?? 0)</div>
+        <div class="sf-stat-sub">Needs action</div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Approved</div>
+        <div class="sf-stat-value success">@(stats?.TotalApproved ?? 0)</div>
+        <div class="sf-stat-sub">@(stats?.TotalRejected ?? 0) rejected</div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Weight processed</div>
+        <div class="sf-stat-value">@(stats != null ? (stats.TotalWeightProcessed / 1000.0).ToString("F1") + "t" : "0t")</div>
+        <div class="sf-stat-sub">Total</div>
+    </div>
+</div>
+
+<div class="sf-row sf-row-2" style="margin-bottom:14px">
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Weight processed — last 7 days</span>
+            <a href="/Report" class="sf-card-action">Full report →</a>
+        </div>
+        <div id="chart-weight" style="min-height:160px"></div>
+    </div>
+
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Processing overview</span>
+            <a href="/Report/Stats" class="sf-card-action">Details →</a>
+        </div>
+        <div id="chart-donut" style="min-height:160px"></div>
+    </div>
+</div>
+
+<div class="sf-row sf-row-2">
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Recent shipments</span>
+            <a href="/Shipment" class="sf-card-action">View all →</a>
+        </div>
+        @if (pending.Any())
+        {
+            <table class="sf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Item / SKU</th>
+                        <th>Weight</th>
+                        <th>Received</th>
+                        <th>St.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in pending)
+                    {
+                        <tr>
+                            <td><a href="/Shipment/Detail/@s.ShipmentId" class="col-link">SHP-@s.ShipmentId.ToString("D4")</a></td>
+                            <td>@s.ItemName — <span class="col-muted">@s.SKU</span></td>
+                            <td>@s.TotalWeight @s.Unit</td>
+                            <td class="col-muted">@s.ReceivedAt.ToString("dd MMM")</td>
+                            <td><span class="sf-status @s.Status.Substring(0,1).ToUpper()">@s.Status.Substring(0,1).ToUpper()</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="sf-empty-state">
+                <div class="sf-empty-state-title">No pending shipments</div>
+                <div class="sf-empty-state-sub">All shipments are up to date.</div>
+            </div>
+        }
+    </div>
+
+    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+    {
+        <div class="sf-card">
+            <div class="sf-card-header">
+                <span class="sf-card-title">Pending approvals</span>
+                <a href="/Process/PendingApprovals" class="sf-card-action">Review all →</a>
+            </div>
+            @if (approvals.Any())
+            {
+                <table class="sf-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>SKU</th>
+                            <th>Output wt.</th>
+                            <th>By</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in approvals)
+                        {
+                            <tr>
+                                <td>@a.ItemName</td>
+                                <td class="col-muted">@a.SKU</td>
+                                <td>@a.OutputWeight @a.Unit</td>
+                                <td class="col-muted">@a.ProcessedByName</td>
+                                <td>
+                                    <a href="/Process/Detail/@a.ProcessedItemId" class="sf-btn sf-btn-outline sf-btn-sm">Review</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="sf-empty-state">
+                    <div class="sf-empty-state-title">No pending approvals</div>
+                    <div class="sf-empty-state-sub">Nothing waiting for your review.</div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+$(function () {
+    var weightOpts = {
+        series: [{ name: 'Weight (kg)', data: [320, 480, 390, 610, 520, 740, 680] }],
+        chart: { type: 'area', height: 160, toolbar: { show: false }, sparkline: { enabled: false }, animations: { enabled: true, easing: 'easeinout', speed: 700 } },
+        stroke: { curve: 'smooth', width: 2 },
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.02, stops: [0, 100] } },
+        colors: ['#1d6fa8'],
+        xaxis: { categories: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], labels: { style: { fontSize: '11px', colors: '#8a97a6' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { fontSize: '11px', colors: '#8a97a6' } } },
+        grid: { borderColor: '#f0f3f6', strokeDashArray: 4, xaxis: { lines: { show: false } } },
+        dataLabels: { enabled: false },
+        tooltip: { theme: 'light', y: { formatter: function(v){ return v + ' kg'; } } },
+        markers: { size: 3, colors: ['#fff'], strokeColors: '#1d6fa8', strokeWidth: 2 }
+    };
+    new ApexCharts(document.querySelector('#chart-weight'), weightOpts).render();
+
+    var pending = @(stats?.TotalPending ?? 0);
+    var approved = @(stats?.TotalApproved ?? 0);
+    var rejected = @(stats?.TotalRejected ?? 0);
+
+    var donutOpts = {
+        series: [approved, pending, rejected],
+        chart: { type: 'donut', height: 160, animations: { enabled: true, easing: 'easeinout', speed: 600 } },
+        labels: ['Approved', 'Pending', 'Rejected'],
+        colors: ['#2e7d32', '#1d6fa8', '#c62828'],
+        legend: { position: 'bottom', fontSize: '11px' },
+        plotOptions: { pie: { donut: { size: '65%' } } },
+        dataLabels: { enabled: false },
+        tooltip: { theme: 'light' }
+    };
+    new ApexCharts(document.querySelector('#chart-donut'), donutOpts).render();
+});
+</script>
+}
