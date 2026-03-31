@@ -1,0 +1,39 @@
+# Build outputs
+bin/
+obj/
+
+# .NET
+*.user
+*.suo
+.vs/
+*.dbmdl
+*.jfm
+
+# Logs
+logs/
+*.log
+
+.env
+
+# EF Core migrations (keep folder, ignore snapshots if preferred)
+# Uncomment below if you want to exclude migrations
+# Migrations/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+
+# Publish output
+publish/
