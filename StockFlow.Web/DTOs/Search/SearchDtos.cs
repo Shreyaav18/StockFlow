@@ -19,8 +19,11 @@ namespace StockFlow.Web.DTOs.Search
     {
         public string Query { get; set; } = string.Empty;
         public int TotalResults { get; set; }
+        public bool SearchItems { get; set; } = true;
+        public bool SearchShipments { get; set; } = true;
+        public bool SearchProcessedItems { get; set; } = true;
         public IEnumerable<ItemViewModel> Items { get; set; } = Enumerable.Empty<ItemViewModel>();
         public IEnumerable<ShipmentViewModel> Shipments { get; set; } = Enumerable.Empty<ShipmentViewModel>();
         public IEnumerable<ProcessedItemViewModel> ProcessedItems { get; set; } = Enumerable.Empty<ProcessedItemViewModel>();
-    }
+    }   
 }

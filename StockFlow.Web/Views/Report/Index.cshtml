@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "Reports";
+    ViewData["Breadcrumb"] = "analytics";
+    var today = DateTime.UtcNow.Date;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Reports</div>
+        <div class="sf-page-sub">Processing analytics and exports</div>
+    </div>
+</div>
+
+<div class="sf-row sf-row-3" style="margin-bottom:14px">
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">Daily report</span></div>
+        <form method="get" action="/Report/Daily">
+            <div class="sf-form-group">
+                <label class="sf-label">Date</label>
+                <input type="date" name="date" class="sf-input" value="@today.ToString("yyyy-MM-dd")"/>
+            </div>
+            <button type="submit" class="sf-btn sf-btn-primary sf-w-100">View daily report</button>
+        </form>
+    </div>
+
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">Date range report</span></div>
+        <form method="get" action="/Report/Range">
+            <div class="sf-form-group">
+                <label class="sf-label">From</label>
+                <input type="date" name="from" class="sf-input" value="@today.AddDays(-7).ToString("yyyy-MM-dd")"/>
+            </div>
+            <div class="sf-form-group">
+                <label class="sf-label">To</label>
+                <input type="date" name="to" class="sf-input" value="@today.ToString("yyyy-MM-dd")"/>
+            </div>
+            <button type="submit" class="sf-btn sf-btn-primary sf-w-100">View range report</button>
+        </form>
+    </div>
+
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">Processing stats</span></div>
+        <p style="font-size:12.5px;color:var(--sf-text-muted);margin-bottom:14px">
+            Overall system-wide processing statistics and averages.
+        </p>
+        <a href="/Report/Stats" class="sf-btn sf-btn-primary sf-w-100">View stats</a>
+    </div>
+</div>
+
+<div class="sf-card">
+    <div class="sf-card-header"><span class="sf-card-title">Quick exports</span></div>
+    <div class="sf-flex-center sf-gap-8">
+        <a href="/Report/ExportReportPdf?from=@today.AddDays(-7).ToString("yyyy-MM-dd")&to=@today.ToString("yyyy-MM-dd")"
+           class="sf-btn sf-btn-outline">Export last 7 days (PDF)</a>
+        <a href="/Report/ExportReportExcel?from=@today.AddDays(-7).ToString("yyyy-MM-dd")&to=@today.ToString("yyyy-MM-dd")"
+           class="sf-btn sf-btn-outline">Export last 7 days (Excel)</a>
+        <a href="/Report/ExportReportPdf?from=@today.AddDays(-30).ToString("yyyy-MM-dd")&to=@today.ToString("yyyy-MM-dd")"
+           class="sf-btn sf-btn-ghost">Export last 30 days (PDF)</a>
+    </div>
+</div>

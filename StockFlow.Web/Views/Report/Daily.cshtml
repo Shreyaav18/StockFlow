@@ -1,0 +1,62 @@
+@using StockFlow.Web.DTOs.Report
+@model DailyReportViewModel
+@{
+    ViewData["Title"] = "Daily report";
+    ViewData["Breadcrumb"] = "reports / daily";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Daily report — @Model.Date.ToString("dd MMM yyyy")</div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        <a href="/Report/ExportReportPdf?from=@Model.Date.ToString("yyyy-MM-dd")&to=@Model.Date.ToString("yyyy-MM-dd")"
+           class="sf-btn sf-btn-outline">Export PDF</a>
+        <a href="/Report/ExportReportExcel?from=@Model.Date.ToString("yyyy-MM-dd")&to=@Model.Date.ToString("yyyy-MM-dd")"
+           class="sf-btn sf-btn-ghost">Export Excel</a>
+        <a href="/Report" class="sf-btn sf-btn-ghost">← Reports</a>
+    </div>
+</div>
+
+<div class="sf-stat-grid">
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Shipments received</div>
+        <div class="sf-stat-value">@Model.TotalShipmentsReceived</div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Items processed</div>
+        <div class="sf-stat-value">@Model.TotalItemsProcessed</div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Approved / Rejected</div>
+        <div class="sf-stat-value"><span class="success">@Model.TotalApproved</span> / <span class="danger">@Model.TotalRejected</span></div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Weight loss</div>
+        <div class="sf-stat-value">@Model.WeightLoss.ToString("F2")</div>
+        <div class="sf-stat-sub">In: @Model.TotalInputWeight.ToString("F2") → Out: @Model.TotalOutputWeight.ToString("F2")</div>
+    </div>
+</div>
+
+@if (Model.ItemBreakdown.Any())
+{
+    <div class="sf-card sf-mt-16">
+        <div class="sf-card-header"><span class="sf-card-title">Item breakdown</span></div>
+        <table class="sf-table">
+            <thead>
+                <tr><th>Item</th><th>SKU</th><th>Count</th><th>Total weight</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.ItemBreakdown.OrderByDescending(x => x.TotalWeight))
+                {
+                    <tr>
+                        <td>@b.ItemName</td>
+                        <td style="font-family:monospace;font-size:12px">@b.SKU</td>
+                        <td>@b.Count</td>
+                        <td>@b.TotalWeight.ToString("F2") kg</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

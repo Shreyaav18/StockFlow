@@ -1,0 +1,57 @@
+@using StockFlow.Web.DTOs.Item
+@model ItemViewModel
+@{
+    ViewData["Title"] = Model.ItemName;
+    ViewData["Breadcrumb"] = "items / detail";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">@Model.ItemName</div>
+        <div class="sf-page-sub" style="font-family:monospace">@Model.SKU</div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+        {
+            <a href="/Item/Edit/@Model.ItemId" class="sf-btn sf-btn-outline">Edit item</a>
+        }
+        <a href="/Item" class="sf-btn sf-btn-ghost">← Back</a>
+    </div>
+</div>
+
+<div class="sf-row sf-row-2" style="max-width:800px">
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Item details</span>
+            @if (Model.IsActive)
+            {
+                <span class="sf-badge sf-badge-success">Active</span>
+            }
+            else
+            {
+                <span class="sf-badge sf-badge-muted">Inactive</span>
+            }
+        </div>
+        <table class="sf-table">
+            <tbody>
+                <tr><td class="col-muted" style="width:140px">Item ID</td><td>#@Model.ItemId</td></tr>
+                <tr><td class="col-muted">Item name</td><td>@Model.ItemName</td></tr>
+                <tr><td class="col-muted">SKU</td><td style="font-family:monospace">@Model.SKU</td></tr>
+                <tr><td class="col-muted">Unit</td><td>@Model.Unit</td></tr>
+                <tr><td class="col-muted">Created by</td><td>@Model.CreatedByName</td></tr>
+                <tr><td class="col-muted">Created at</td><td>@Model.CreatedAt.ToString("dd MMM yyyy, HH:mm")</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Quick actions</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="/Shipment/Receive" class="sf-btn sf-btn-primary">Receive shipment for this item</a>
+            <a href="/Search?Query=@Model.SKU" class="sf-btn sf-btn-ghost">Search shipments by SKU</a>
+            <a href="/Admin/AuditLogsByEntity?entityName=Item&entityId=@Model.ItemId" class="sf-btn sf-btn-ghost">View audit trail</a>
+        </div>
+    </div>
+</div>

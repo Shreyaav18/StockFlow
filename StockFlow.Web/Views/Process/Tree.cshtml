@@ -1,0 +1,89 @@
+@using StockFlow.Web.DTOs.Process
+@using StockFlow.Web.DTOs.Shipment
+@model TreeNodeViewModel
+@{
+    ViewData["Title"] = "Processing tree";
+    ViewData["Breadcrumb"] = "processing / tree";
+    var shipment = ViewBag.Shipment as ShipmentViewModel;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Processing tree</div>
+        <div class="sf-page-sub">
+            @if (shipment != null)
+            {
+                <span>SHP-@shipment.ShipmentId.ToString("D4") — @shipment.ItemName (@shipment.TotalWeight @shipment.Unit)</span>
+            }
+        </div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        @if (shipment != null)
+        {
+            <a href="/Process/Create?shipmentId=@shipment.ShipmentId" class="sf-btn sf-btn-primary">+ Process further</a>
+            <a href="/Report/ExportTreePdf?shipmentId=@shipment.ShipmentId" class="sf-btn sf-btn-ghost">Export PDF</a>
+            <a href="/Report/ExportTreeExcel?shipmentId=@shipment.ShipmentId" class="sf-btn sf-btn-ghost">Export Excel</a>
+        }
+        <a href="/Shipment" class="sf-btn sf-btn-ghost">← Shipments</a>
+    </div>
+</div>
+
+<div class="sf-card">
+    <div class="sf-card-header">
+        <span class="sf-card-title">Item hierarchy</span>
+        <div class="sf-flex-center sf-gap-8">
+            <button class="sf-btn sf-btn-ghost sf-btn-sm" id="expand-all">Expand all</button>
+            <button class="sf-btn sf-btn-ghost sf-btn-sm" id="collapse-all">Collapse all</button>
+        </div>
+    </div>
+
+    <div id="tree-container" style="padding:8px 0">
+        @if (Model != null)
+        {
+            @await Html.PartialAsync("_TreeNode", Model)
+        }
+        else
+        {
+            <div class="sf-empty-state">
+                <div class="sf-empty-state-title">No processed items yet</div>
+                <div class="sf-empty-state-sub">
+                    @if (shipment != null)
+                    {
+                        <a href="/Process/Create?shipmentId=@shipment.ShipmentId" class="sf-btn sf-btn-primary sf-mt-8">Start processing</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$('#expand-all').on('click', function () {
+    $('.tree-children').show();
+    $('.tree-toggle').text('−');
+});
+
+$('#collapse-all').on('click', function () {
+    $('.tree-children').hide();
+    $('.tree-toggle').text('+');
+});
+
+$(document).on('click', '.tree-toggle', function () {
+    var $children = $(this).closest('.tree-node-content').next('.tree-children');
+    if ($children.is(':visible')) {
+        $children.slideUp(180);
+        $(this).text('+');
+    } else {
+        $children.slideDown(200);
+        $(this).text('−');
+    }
+});
+
+$(document).on('click', '.tree-node-content', function (e) {
+    if ($(e.target).hasClass('tree-toggle')) return;
+    var id = $(this).data('id');
+    if (id) window.location.href = '/Process/Detail/' + id;
+});
+</script>
+}

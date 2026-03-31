@@ -1,0 +1,67 @@
+@using StockFlow.Web.DTOs.Report
+@{
+    ViewData["Title"] = "User management";
+    ViewData["Breadcrumb"] = "admin / users";
+    var logs = ViewBag.RecentLogs as IEnumerable<AuditLogViewModel> ?? Enumerable.Empty<AuditLogViewModel>();
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">User management</div>
+        <div class="sf-page-sub">Manage accounts and roles</div>
+    </div>
+    <a href="/Auth/Register" class="sf-btn sf-btn-primary">+ New user</a>
+</div>
+
+<div class="sf-row sf-row-2">
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">Assign role</span></div>
+        <form method="post" action="/Admin/AssignRole">
+            @Html.AntiForgeryToken()
+            <div class="sf-form-group">
+                <label class="sf-label">User ID <span class="required">*</span></label>
+                <input type="number" name="targetUserId" class="sf-input" placeholder="Enter user ID" required/>
+            </div>
+            <div class="sf-form-group">
+                <label class="sf-label">New role <span class="required">*</span></label>
+                <select name="role" class="sf-select" required>
+                    <option value="">— Select role —</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="sf-btn sf-btn-primary">Assign role</button>
+        </form>
+    </div>
+
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Recent activity</span>
+            <a href="/Admin/AuditLogs" class="sf-card-action">View all →</a>
+        </div>
+        @if (logs.Any())
+        {
+            <table class="sf-table">
+                <thead>
+                    <tr><th>Action</th><th>Entity</th><th>By</th><th>At</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in logs.Take(8))
+                    {
+                        <tr>
+                            <td><span class="sf-badge sf-badge-primary">@log.Action</span></td>
+                            <td class="col-muted">@log.EntityName #@log.EntityId</td>
+                            <td>@log.PerformedByName</td>
+                            <td class="col-muted">@log.PerformedAt.ToString("dd MMM, HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="sf-empty-state"><div class="sf-empty-state-title">No activity yet</div></div>
+        }
+    </div>
+</div>

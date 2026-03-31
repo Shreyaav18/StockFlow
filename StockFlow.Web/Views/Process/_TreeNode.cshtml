@@ -1,0 +1,103 @@
+@using StockFlow.Web.DTOs.Process
+@model TreeNodeViewModel
+
+<div class="tree-node" style="@(Model.Depth == 0 ? "margin-left:0" : "")">
+    <div class="tree-node-content @(Model.Depth == 0 ? "root" : "")"
+         data-id="@(Model.ProcessedItemId > 0 ? Model.ProcessedItemId.ToString() : "")">
+
+        @if (Model.Children.Any())
+        {
+            <button class="tree-toggle" type="button">−</button>
+        }
+        else
+        {
+            <span style="width:16px;display:inline-block"></span>
+        }
+
+        <div style="flex:1;min-width:0">
+            <div style="font-size:12.5px;font-weight:600;@(Model.Depth == 0 ? "color:#fff" : "")">
+                @Model.ItemName
+                <span style="font-family:monospace;font-size:11px;font-weight:400;opacity:0.65">@Model.SKU</span>
+            </div>
+            <div style="font-size:11px;opacity:0.7;margin-top:1px">
+                In: @Model.InputWeight.ToString("F2") → Out: @Model.OutputWeight.ToString("F2") @Model.Unit
+                @if (Model.Depth > 0)
+                {
+                    <span style="margin-left:6px">Depth: @Model.Depth</span>
+                }
+            </div>
+        </div>
+
+        @if (Model.ProcessedItemId > 0)
+        {
+            <span class="sf-status @Model.Status.Substring(0,1).ToUpper()" style="flex-shrink:0">
+                @Model.Status.Substring(0,1).ToUpper()
+            </span>
+
+            @if (Model.Status == "Pending" && (User.IsInRole("Admin") || User.IsInRole("Manager")))
+            {
+                <form method="post" action="/Process/Approve" style="display:inline;margin-left:6px">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.ProcessedItemId"/>
+                    <input type="hidden" name="shipmentId" value="@ViewBag.Shipment?.ShipmentId"/>
+                    <button type="submit" class="sf-btn sf-btn-outline sf-btn-sm"
+                            data-sf-confirm="Approve this item?">A</button>
+                </form>
+                <button type="button" class="sf-btn sf-btn-danger sf-btn-sm"
+                        style="margin-left:4px"
+                        onclick="showRejectModal(@Model.ProcessedItemId, @(ViewBag.Shipment?.ShipmentId ?? 0))">R</button>
+            }
+
+            @if (Model.Status == "Approved")
+            {
+                <a href="/Process/Create?shipmentId=@(ViewBag.Shipment?.ShipmentId)&parentId=@Model.ProcessedItemId"
+                   class="sf-btn sf-btn-ghost sf-btn-sm" style="margin-left:6px">+ Child</a>
+            }
+        }
+    </div>
+
+    @if (Model.Children.Any())
+    {
+        <div class="tree-children" style="margin-left:20px;border-left:0.5px dashed var(--sf-border);padding-left:12px">
+            @foreach (var child in Model.Children)
+            {
+                @await Html.PartialAsync("_TreeNode", child)
+            }
+        </div>
+    }
+</div>
+
+<div id="reject-modal" class="sf-modal-backdrop">
+    <div class="sf-modal">
+        <div class="sf-modal-header">
+            <span class="sf-modal-title">Reject item</span>
+            <button class="sf-modal-close" onclick="hideRejectModal()">✕</button>
+        </div>
+        <form method="post" action="/Process/Reject">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="reject-item-id"/>
+            <input type="hidden" name="shipmentId" id="reject-shipment-id"/>
+            <div class="sf-form-group">
+                <label class="sf-label">Reason for rejection <span class="required">*</span></label>
+                <textarea name="reason" class="sf-textarea" placeholder="Describe the reason..." required></textarea>
+            </div>
+            <div class="sf-modal-footer">
+                <button type="button" class="sf-btn sf-btn-ghost" onclick="hideRejectModal()">Cancel</button>
+                <button type="submit" class="sf-btn sf-btn-danger">Reject item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function showRejectModal(itemId, shipmentId) {
+    $('#reject-item-id').val(itemId);
+    $('#reject-shipment-id').val(shipmentId);
+    $('#reject-modal').addClass('show');
+}
+function hideRejectModal() {
+    $('#reject-modal').removeClass('show');
+}
+</script>
+}

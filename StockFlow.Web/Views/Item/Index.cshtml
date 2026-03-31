@@ -1,0 +1,107 @@
+@using StockFlow.Web.DTOs.Item
+@{
+    ViewData["Title"] = "Items";
+    ViewData["Breadcrumb"] = "catalog";
+    var items = ViewBag.Items as IEnumerable<ItemViewModel> ?? Enumerable.Empty<ItemViewModel>();
+    var search = ViewBag.Search as string;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Item catalog</div>
+        <div class="sf-page-sub">@items.Count() items</div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+        {
+            <a href="/Item/Create" class="sf-btn sf-btn-primary">+ New item</a>
+        }
+    </div>
+</div>
+
+<div class="sf-card">
+    <div class="sf-card-header">
+        <span class="sf-card-title">All items</span>
+        <form method="get" action="/Item" class="sf-flex-center sf-gap-8">
+            <div class="sf-search-wrap" style="max-width:220px;position:relative">
+                <svg class="sf-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="6" cy="6" r="4"/><path d="M14 14l-3-3"/>
+                </svg>
+                <input type="text" name="search" class="sf-search-input" placeholder="Search name or SKU..." value="@search"/>
+            </div>
+            <button type="submit" class="sf-btn sf-btn-ghost sf-btn-sm">Search</button>
+            @if (!string.IsNullOrEmpty(search))
+            {
+                <a href="/Item" class="sf-btn sf-btn-ghost sf-btn-sm">Clear</a>
+            }
+        </form>
+    </div>
+
+    @if (items.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Item name</th>
+                    <th>SKU</th>
+                    <th>Unit</th>
+                    <th>Created by</th>
+                    <th>Created</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in items)
+                {
+                    <tr>
+                        <td><a href="/Item/Detail/@item.ItemId" class="col-link">@item.ItemName</a></td>
+                        <td><span style="font-family:monospace;font-size:12px">@item.SKU</span></td>
+                        <td class="col-muted">@item.Unit</td>
+                        <td class="col-muted">@item.CreatedByName</td>
+                        <td class="col-muted">@item.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="sf-badge sf-badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="sf-badge sf-badge-muted">Inactive</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="sf-flex-center sf-gap-8">
+                                <a href="/Item/Detail/@item.ItemId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a>
+                                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                {
+                                    <a href="/Item/Edit/@item.ItemId" class="sf-btn sf-btn-outline sf-btn-sm">Edit</a>
+                                }
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <form method="post" action="/Item/Delete/@item.ItemId" style="display:inline"
+                                          data-sf-confirm="Delete '@item.ItemName'? This cannot be undone.">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="sf-btn sf-btn-danger sf-btn-sm">Delete</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">@(string.IsNullOrEmpty(search) ? "No items yet" : "No items found for \"" + search + "\"")</div>
+            <div class="sf-empty-state-sub">
+                @if (string.IsNullOrEmpty(search) && (User.IsInRole("Admin") || User.IsInRole("Manager")))
+                {
+                    <a href="/Item/Create" class="sf-btn sf-btn-primary sf-mt-8">Create first item</a>
+                }
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: stockflow-db
+    environment:
+      SA_PASSWORD: ${SA_PASSWORD}
+      ACCEPT_EULA: ${ACCEPT_EULA}
+    ports:
+      - "${SQL_PORT}:1433"
+    volumes:
+      - stockflow-db-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ${SA_PASSWORD} -Q 'SELECT 1' -No || exit 1"]
+      interval: 15s
+      retries: 15
+      start_period: 60s
+      timeout: 10s
+    networks:
+      - stockflow-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stockflow-app
+    ports:
+      - "${APP_PORT}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Set to "true" when the container serves HTTP only (no TLS terminator).
+      # This disables HTTPS redirect and relaxes cookie SecurePolicy so auth works.
+      DISABLE_HTTPS_REDIRECT: "true"
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=StockFlowDB;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      App__UnprocessedAlertHours: 24
+      Hangfire__DashboardPath: /jobs
+    volumes:
+      # Persist Data Protection keys across container restarts so existing auth
+      # cookies remain valid after a redeploy.
+      - stockflow-dp-keys:/app/dataprotection-keys
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - stockflow-net
+    restart: on-failure
+
+volumes:
+  stockflow-db-data:
+  stockflow-dp-keys:
+
+networks:
+  stockflow-net:
+    driver: bridge

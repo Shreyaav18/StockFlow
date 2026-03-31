@@ -1,0 +1,196 @@
+@using StockFlow.Web.DTOs.Process
+@using StockFlow.Web.DTOs.Item
+@using StockFlow.Web.DTOs.Shipment
+@model CreateProcessDto
+@{
+    ViewData["Title"] = "Process items";
+    ViewData["Breadcrumb"] = "processing / create";
+    var shipment = ViewBag.Shipment as ShipmentViewModel;
+    var items = ViewBag.Items as IEnumerable<ItemViewModel> ?? Enumerable.Empty<ItemViewModel>();
+    var parent = ViewBag.Parent as ProcessedItemViewModel;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Process items</div>
+        <div class="sf-page-sub">
+            @if (shipment != null)
+            {
+                <span>SHP-@shipment.ShipmentId.ToString("D4") — @shipment.ItemName</span>
+            }
+        </div>
+    </div>
+    <a href="/Shipment/Detail/@Model?.ShipmentId" class="sf-btn sf-btn-ghost">← Back to shipment</a>
+</div>
+
+@if (parent != null)
+{
+    <div class="sf-alert sf-alert-info sf-mb-16">
+        Processing under <strong>@parent.ItemName</strong> (@parent.SKU) — available weight: <strong id="available-weight">@parent.OutputWeight @parent.Unit</strong>
+    </div>
+}
+else if (shipment != null)
+{
+    <div class="sf-alert sf-alert-info sf-mb-16">
+        Processing root shipment — total weight: <strong id="available-weight">@shipment.TotalWeight @shipment.Unit</strong>
+    </div>
+}
+
+<div class="sf-card" style="max-width:760px">
+    <form method="post" action="/Process/Create" id="process-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ShipmentId" value="@Model?.ShipmentId"/>
+        <input type="hidden" name="ParentId" value="@Model?.ParentId"/>
+
+        <div class="sf-card-header">
+            <span class="sf-card-title">Child items</span>
+            <button type="button" class="sf-btn sf-btn-outline sf-btn-sm" id="add-child-btn">+ Add item</button>
+        </div>
+
+        <div class="child-rows-container" id="child-rows">
+            <div class="child-row" data-index="0">
+                <div class="sf-form-group" style="margin-bottom:0">
+                    <label class="sf-label">Item <span class="required">*</span></label>
+                    <select name="Children[0].ItemId" class="sf-select child-item-select" required>
+                        <option value="">— Select item —</option>
+                        @foreach (var item in items)
+                        {
+                            <option value="@item.ItemId" data-unit="@item.Unit">@item.ItemName (@item.SKU)</option>
+                        }
+                    </select>
+                </div>
+                <div class="sf-form-group" style="margin-bottom:0">
+                    <label class="sf-label">Output weight <span class="required">*</span></label>
+                    <div class="sf-input-group">
+                        <input type="number" name="Children[0].OutputWeight" class="sf-input child-weight-input"
+                               placeholder="0.00" min="0.001" step="0.001" required/>
+                        <span class="sf-input-addon child-unit-display">kg</span>
+                    </div>
+                </div>
+                <div class="sf-form-group" style="margin-bottom:0">
+                    <label class="sf-label">Weight remaining</label>
+                    <div id="weight-remaining" style="font-size:13px;font-weight:600;color:var(--sf-primary);padding-top:8px">
+                        — kg
+                    </div>
+                </div>
+                <button type="button" class="child-row-remove" style="visibility:hidden">✕</button>
+            </div>
+        </div>
+
+        <div id="weight-warning" class="sf-alert sf-alert-danger" style="display:none;margin-top:10px">
+            Total child weight exceeds available weight.
+        </div>
+
+        <hr class="sf-divider"/>
+
+        <div class="sf-flex-between">
+            <div style="font-size:12.5px;color:var(--sf-text-muted)">
+                Total: <strong id="total-weight-display">0.00</strong>
+                / <span id="max-weight-display">@(parent?.OutputWeight ?? shipment?.TotalWeight ?? 0)</span>
+                <span id="unit-display-main">@(parent?.Unit ?? shipment?.Unit ?? "kg")</span>
+            </div>
+            <div class="sf-flex-center sf-gap-8">
+                <button type="submit" class="sf-btn sf-btn-primary" id="submit-process">Submit for approval</button>
+                <a href="/Shipment/Detail/@Model?.ShipmentId" class="sf-btn sf-btn-ghost">Cancel</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+var childIndex = 1;
+var maxWeight = parseFloat('@(parent?.OutputWeight ?? shipment?.TotalWeight ?? 0)');
+var itemsData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+    items.Select(i => new { id = i.ItemId, name = i.ItemName, sku = i.SKU, unit = i.Unit })
+));
+
+function buildItemOptions(selectedId) {
+    var html = '<option value="">— Select item —</option>';
+    itemsData.forEach(function(i) {
+        html += '<option value="' + i.id + '" data-unit="' + i.unit + '"' +
+            (i.id == selectedId ? ' selected' : '') + '>' +
+            SF.escapeHtml(i.name) + ' (' + SF.escapeHtml(i.sku) + ')</option>';
+    });
+    return html;
+}
+
+$('#add-child-btn').on('click', function () {
+    var idx = childIndex++;
+    var row = $(
+        '<div class="child-row" data-index="' + idx + '">' +
+        '<div class="sf-form-group" style="margin-bottom:0">' +
+        '<label class="sf-label">Item <span class="required">*</span></label>' +
+        '<select name="Children[' + idx + '].ItemId" class="sf-select child-item-select" required>' +
+        buildItemOptions(null) +
+        '</select></div>' +
+        '<div class="sf-form-group" style="margin-bottom:0">' +
+        '<label class="sf-label">Output weight <span class="required">*</span></label>' +
+        '<div class="sf-input-group">' +
+        '<input type="number" name="Children[' + idx + '].OutputWeight" class="sf-input child-weight-input" placeholder="0.00" min="0.001" step="0.001" required/>' +
+        '<span class="sf-input-addon child-unit-display">kg</span>' +
+        '</div></div>' +
+        '<div></div>' +
+        '<button type="button" class="child-row-remove">✕</button>' +
+        '</div>'
+    );
+    $('#child-rows').append(row);
+    updateRemoveButtons();
+    recalcWeights();
+});
+
+$(document).on('click', '.child-row-remove', function () {
+    $(this).closest('.child-row').remove();
+    reindexRows();
+    updateRemoveButtons();
+    recalcWeights();
+});
+
+$(document).on('change', '.child-item-select', function () {
+    var unit = $(this).find(':selected').data('unit') || 'kg';
+    $(this).closest('.child-row').find('.child-unit-display').text(unit);
+});
+
+$(document).on('input', '.child-weight-input', function () {
+    recalcWeights();
+});
+
+function recalcWeights() {
+    var total = 0;
+    $('.child-weight-input').each(function () {
+        var v = parseFloat($(this).val()) || 0;
+        total += v;
+    });
+    total = Math.round(total * 1000) / 1000;
+    var remaining = Math.round((maxWeight - total) * 1000) / 1000;
+    $('#total-weight-display').text(total.toFixed(2));
+    $('#weight-remaining').text(remaining.toFixed(2) + ' ' + $('#unit-display-main').text());
+
+    if (total > maxWeight) {
+        $('#weight-warning').show();
+        $('#submit-process').prop('disabled', true);
+        $('#weight-remaining').css('color', '#a32d2d');
+    } else {
+        $('#weight-warning').hide();
+        $('#submit-process').prop('disabled', false);
+        $('#weight-remaining').css('color', 'var(--sf-primary)');
+    }
+}
+
+function reindexRows() {
+    $('.child-row').each(function (i) {
+        $(this).attr('data-index', i);
+        $(this).find('[name*="Children["]').each(function () {
+            var name = $(this).attr('name').replace(/Children\[\d+\]/, 'Children[' + i + ']');
+            $(this).attr('name', name);
+        });
+    });
+    childIndex = $('.child-row').length;
+}
+
+function updateRemoveButtons() {
+    var rows = $('.child-row');
+    rows.find('.child-row-remove').css('visibility', rows.length > 1 ? 'visible' : 'hidden');
+}
+</script>
+}

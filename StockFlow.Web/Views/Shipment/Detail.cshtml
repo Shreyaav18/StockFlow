@@ -1,0 +1,54 @@
+@using StockFlow.Web.DTOs.Shipment
+@model ShipmentViewModel
+@{
+    ViewData["Title"] = "SHP-" + Model.ShipmentId.ToString("D4");
+    ViewData["Breadcrumb"] = "shipments / detail";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">SHP-@Model.ShipmentId.ToString("D4")</div>
+        <div class="sf-page-sub">@Model.ItemName — @Model.SKU</div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        @if (Model.Status == "Pending" || Model.Status == "InProgress")
+        {
+            <a href="/Process/Create?shipmentId=@Model.ShipmentId" class="sf-btn sf-btn-primary">Process items</a>
+        }
+        <a href="/Process/Tree?shipmentId=@Model.ShipmentId" class="sf-btn sf-btn-outline">View tree</a>
+        <a href="/Report/ExportTreePdf?shipmentId=@Model.ShipmentId" class="sf-btn sf-btn-ghost">Export PDF</a>
+        <a href="/Report/ExportTreeExcel?shipmentId=@Model.ShipmentId" class="sf-btn sf-btn-ghost">Export Excel</a>
+        <a href="/Shipment" class="sf-btn sf-btn-ghost">← Back</a>
+    </div>
+</div>
+
+<div class="sf-row sf-row-2" style="max-width:900px">
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Shipment info</span>
+            <span class="sf-status @Model.Status.Substring(0,1).ToUpper()">@Model.Status.Substring(0,1).ToUpper()</span>
+        </div>
+        <table class="sf-table">
+            <tbody>
+                <tr><td class="col-muted" style="width:140px">Shipment ID</td><td>SHP-@Model.ShipmentId.ToString("D4")</td></tr>
+                <tr><td class="col-muted">Item</td><td>@Model.ItemName</td></tr>
+                <tr><td class="col-muted">SKU</td><td style="font-family:monospace">@Model.SKU</td></tr>
+                <tr><td class="col-muted">Total weight</td><td>@Model.TotalWeight @Model.Unit</td></tr>
+                <tr><td class="col-muted">Status</td><td>@Model.Status @(Model.IsStale ? " — ⚠ Stale" : "")</td></tr>
+                <tr><td class="col-muted">Received by</td><td>@Model.ReceivedByName</td></tr>
+                <tr><td class="col-muted">Received at</td><td>@Model.ReceivedAt.ToString("dd MMM yyyy, HH:mm")</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="sf-card">
+        <div class="sf-card-header">
+            <span class="sf-card-title">Quick actions</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="/Process/Create?shipmentId=@Model.ShipmentId" class="sf-btn sf-btn-primary">+ Process this shipment</a>
+            <a href="/Process/Tree?shipmentId=@Model.ShipmentId" class="sf-btn sf-btn-outline">View full processing tree</a>
+            <a href="/Admin/AuditLogsByEntity?entityName=Shipment&entityId=@Model.ShipmentId" class="sf-btn sf-btn-ghost">View audit trail</a>
+        </div>
+    </div>
+</div>

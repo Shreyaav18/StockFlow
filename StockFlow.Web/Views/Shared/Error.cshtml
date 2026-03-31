@@ -1,0 +1,37 @@
+﻿@{
+    Layout = null;
+    var code = ViewBag.StatusCode ?? 500;
+    var title = ViewBag.Title ?? "Error";
+    var message = ViewBag.Message ?? "Something went wrong.";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@code — StockFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #0f1c2e; }
+        .err-wrap { text-align: center; padding: 40px 24px; max-width: 420px; }
+        .err-code { font-size: 72px; font-weight: 600; color: #1d6fa8; line-height: 1; margin-bottom: 12px; }
+        .err-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+        .err-msg { font-size: 13px; color: #5a6a7a; margin-bottom: 28px; line-height: 1.6; }
+        .err-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 22px; background: #1d6fa8; color: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; text-decoration: none; transition: background 0.15s; }
+        .err-btn:hover { background: #155a8a; color: #fff; }
+        .err-divider { border: none; border-top: 0.5px solid #e2e6ea; margin: 20px 0; }
+        .err-back { font-size: 12px; color: #8a97a6; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="err-wrap">
+        <div class="err-code">@code</div>
+        <div class="err-title">@title</div>
+        <div class="err-msg">@message</div>
+        <a href="/Dashboard" class="err-btn">Go to dashboard</a>
+        <hr class="err-divider"/>
+        <span class="err-back" onclick="history.back()">← Go back</span>
+    </div>
+</body>
+</html>

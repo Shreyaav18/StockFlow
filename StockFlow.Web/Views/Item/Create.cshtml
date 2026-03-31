@@ -1,0 +1,95 @@
+@model StockFlow.Web.DTOs.Item.CreateItemDto
+@{
+    ViewData["Title"] = "New item";
+    ViewData["Breadcrumb"] = "items / new";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">New item</div>
+        <div class="sf-page-sub">Add a new item to the catalog</div>
+    </div>
+    <a href="/Item" class="sf-btn sf-btn-ghost">← Back to items</a>
+</div>
+
+<div style="max-width:560px">
+    <div class="sf-card">
+        <form method="post" action="/Item/Create" id="create-item-form">
+            @Html.AntiForgeryToken()
+
+            <div class="sf-form-group">
+                <label class="sf-label">Item name <span class="required">*</span></label>
+                <input type="text" name="ItemName" class="sf-input @(ViewData.ModelState["ItemName"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                       placeholder="e.g. Basmati Rice" value="@Model?.ItemName" required/>
+                @if (ViewData.ModelState["ItemName"]?.Errors.Count > 0)
+                {
+                    <div class="sf-invalid-feedback">@ViewData.ModelState["ItemName"]!.Errors[0].ErrorMessage</div>
+                }
+            </div>
+
+            <div class="sf-form-group">
+                <label class="sf-label">SKU <span class="required">*</span></label>
+                <div style="position:relative">
+                    <input type="text" name="SKU" id="sku-input" class="sf-input @(ViewData.ModelState["SKU"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                           placeholder="e.g. RICE-001" value="@Model?.SKU"
+                           style="text-transform:uppercase" required/>
+                    <span id="sku-check" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px"></span>
+                </div>
+                @if (ViewData.ModelState["SKU"]?.Errors.Count > 0)
+                {
+                    <div class="sf-invalid-feedback">@ViewData.ModelState["SKU"]!.Errors[0].ErrorMessage</div>
+                }
+                <div id="sku-feedback" style="font-size:11.5px;margin-top:4px"></div>
+            </div>
+
+            <div class="sf-form-group">
+                <label class="sf-label">Unit of measurement <span class="required">*</span></label>
+                <select name="Unit" class="sf-select">
+                    @{
+                        var units = new[] { "kg", "g", "lb", "oz", "ton", "unit", "pcs", "box", "pallet" };
+                        foreach (var unit in units)
+                        {
+                            if (Model?.Unit == unit)
+                            {
+                                <option value="@unit" selected>@unit</option>
+                            }
+                            else
+                            {
+                                <option value="@unit">@unit</option>
+                            }
+                        }
+                    }
+                </select>  
+            </div>
+
+            <hr class="sf-divider"/>
+            <div class="sf-flex-center sf-gap-8">
+                <button type="submit" class="sf-btn sf-btn-primary">Create item</button>
+                <a href="/Item" class="sf-btn sf-btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+var skuTimer;
+$('#sku-input').on('input', function () {
+    var val = $(this).val().toUpperCase();
+    $(this).val(val);
+    clearTimeout(skuTimer);
+    if (val.length < 2) { $('#sku-check').text(''); $('#sku-feedback').text(''); return; }
+    skuTimer = setTimeout(function () {
+        $.get('/Item/CheckSKU', { sku: val }, function (res) {
+            if (res.data && res.data.exists) {
+                $('#sku-check').html('<span style="color:#a32d2d">✕</span>');
+                $('#sku-feedback').html('<span style="color:#a32d2d">This SKU is already taken.</span>');
+            } else {
+                $('#sku-check').html('<span style="color:#1e6e34">✓</span>');
+                $('#sku-feedback').html('<span style="color:#1e6e34">SKU is available.</span>');
+            }
+        });
+    }, 350);
+});
+</script>
+}

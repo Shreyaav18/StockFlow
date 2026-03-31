@@ -1,0 +1,78 @@
+@using StockFlow.Web.DTOs.Shipment
+@using StockFlow.Web.DTOs.Item
+@model CreateShipmentDto
+@{
+    ViewData["Title"] = "Receive shipment";
+    ViewData["Breadcrumb"] = "shipments / receive";
+    var items = ViewBag.Items as IEnumerable<ItemViewModel> ?? Enumerable.Empty<ItemViewModel>();
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Receive shipment</div>
+        <div class="sf-page-sub">Log a new incoming bulk shipment</div>
+    </div>
+    <a href="/Shipment" class="sf-btn sf-btn-ghost">← Back to shipments</a>
+</div>
+
+<div style="max-width:560px">
+    <div class="sf-card">
+        <form method="post" action="/Shipment/Receive">
+            @Html.AntiForgeryToken()
+
+            <div class="sf-form-group">
+                <label class="sf-label">Item <span class="required">*</span></label>
+                <select name="ItemId" id="item-select" class="sf-select @(ViewData.ModelState["ItemId"]?.Errors.Count > 0 ? "is-invalid" : "")" required>
+                    <option value="">— Select an item —</option>
+                    @foreach (var item in items)
+                    {
+                        if (Model?.ItemId == item.ItemId)
+                        {
+                            <option value="@item.ItemId" data-unit="@item.Unit" selected>@item.ItemName — @item.SKU</option>
+                        }
+                        else
+                        {
+                            <option value="@item.ItemId" data-unit="@item.Unit">@item.ItemName — @item.SKU</option>
+                        }
+                    }
+                </select>
+                @if (ViewData.ModelState["ItemId"]?.Errors.Count > 0)
+                {
+                    <div class="sf-invalid-feedback">@ViewData.ModelState["ItemId"]!.Errors[0].ErrorMessage</div>
+                }
+            </div>
+
+            <div class="sf-form-group">
+                <label class="sf-label">Total weight <span class="required">*</span></label>
+                <div class="sf-input-group">
+                    <input type="number" name="TotalWeight" class="sf-input @(ViewData.ModelState["TotalWeight"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                           placeholder="0.00" value="@Model?.TotalWeight" min="0.001" step="0.001" required/>
+                    <span class="sf-input-addon" id="unit-display">kg</span>
+                </div>
+                @if (ViewData.ModelState["TotalWeight"]?.Errors.Count > 0)
+                {
+                    <div class="sf-invalid-feedback">@ViewData.ModelState["TotalWeight"]!.Errors[0].ErrorMessage</div>
+                }
+            </div>
+
+            <div class="sf-alert sf-alert-info" style="font-size:12px">
+                The shipment will be logged as <strong>Pending</strong> and ready for processing.
+            </div>
+
+            <hr class="sf-divider"/>
+            <div class="sf-flex-center sf-gap-8">
+                <button type="submit" class="sf-btn sf-btn-primary">Receive shipment</button>
+                <a href="/Shipment" class="sf-btn sf-btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$('#item-select').on('change', function () {
+    var unit = $(this).find(':selected').data('unit') || 'kg';
+    $('#unit-display').text(unit);
+});
+</script>
+}

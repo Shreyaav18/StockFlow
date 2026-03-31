@@ -1,0 +1,102 @@
+@using StockFlow.Web.DTOs.Process
+@model IEnumerable<ProcessedItemViewModel>
+@{
+    ViewData["Title"] = "Pending approvals";
+    ViewData["Breadcrumb"] = "processing / approvals";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Pending approvals</div>
+        <div class="sf-page-sub">@Model.Count() items awaiting review</div>
+    </div>
+</div>
+
+<div class="sf-card">
+    @if (Model.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>SKU</th>
+                    <th>Shipment</th>
+                    <th>Input wt.</th>
+                    <th>Output wt.</th>
+                    <th>Processed by</th>
+                    <th>Processed at</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><a href="/Process/Detail/@item.ProcessedItemId" class="col-link">@item.ItemName</a></td>
+                        <td style="font-family:monospace;font-size:12px">@item.SKU</td>
+                        <td><a href="/Shipment/Detail/@item.ShipmentId" class="col-link">SHP-@item.ShipmentId.ToString("D4")</a></td>
+                        <td>@item.InputWeight.ToString("F2") @item.Unit</td>
+                        <td>@item.OutputWeight.ToString("F2") @item.Unit</td>
+                        <td class="col-muted">@item.ProcessedByName</td>
+                        <td class="col-muted">@item.ProcessedAt.ToString("dd MMM, HH:mm")</td>
+                        <td>
+                            <div class="sf-flex-center sf-gap-8">
+                                <form method="post" action="/Process/Approve" style="display:inline"
+                                      data-sf-confirm="Approve @item.ItemName?">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.ProcessedItemId"/>
+                                    <input type="hidden" name="shipmentId" value="@item.ShipmentId"/>
+                                    <button type="submit" class="sf-btn sf-btn-outline sf-btn-sm">Approve</button>
+                                </form>
+                                <button type="button" class="sf-btn sf-btn-danger sf-btn-sm"
+                                        onclick="showRejectModal(@item.ProcessedItemId, @item.ShipmentId)">Reject</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">No pending approvals</div>
+            <div class="sf-empty-state-sub">All processed items have been reviewed.</div>
+        </div>
+    }
+</div>
+
+<div id="reject-modal" class="sf-modal-backdrop">
+    <div class="sf-modal">
+        <div class="sf-modal-header">
+            <span class="sf-modal-title">Reject item</span>
+            <button class="sf-modal-close" onclick="hideRejectModal()">✕</button>
+        </div>
+        <form method="post" action="/Process/Reject">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="reject-item-id"/>
+            <input type="hidden" name="shipmentId" id="reject-shipment-id"/>
+            <div class="sf-form-group">
+                <label class="sf-label">Reason <span class="required">*</span></label>
+                <textarea name="reason" class="sf-textarea" placeholder="Describe the reason..." required></textarea>
+            </div>
+            <div class="sf-modal-footer">
+                <button type="button" class="sf-btn sf-btn-ghost" onclick="hideRejectModal()">Cancel</button>
+                <button type="submit" class="sf-btn sf-btn-danger">Reject</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function showRejectModal(itemId, shipmentId) {
+    $('#reject-item-id').val(itemId);
+    $('#reject-shipment-id').val(shipmentId);
+    $('#reject-modal').addClass('show');
+}
+function hideRejectModal() {
+    $('#reject-modal').removeClass('show');
+}
+</script>
+}

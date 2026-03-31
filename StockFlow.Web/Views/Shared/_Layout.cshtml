@@ -1,4 +1,4 @@
-@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery AntiforgeryService
+﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery AntiforgeryService
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,7 +105,7 @@
             <div class="sf-sidebar-user">
                 <div class="sf-user-row">
                     <div class="sf-user-avatar">
-                        @(User.Identity?.Name?.Length > 0 ? User.Identity.Name.Substring(0, 2).ToUpper() : "?")
+                        @(User.Identity?.Name?.Length > 0 ? User.Identity.Name.Substring(0,2).ToUpper() : "?")
                     </div>
                     <div>
                         <div class="sf-user-name">@User.Identity?.Name</div>
@@ -135,9 +135,7 @@
                     </svg>
                     <input type="text" id="sf-global-search" class="sf-search-input"
                            placeholder="Search shipments, items..." autocomplete="off"/>
-                    <div id="sf-search-dropdown"
-                         style="display:none;position:absolute;top:34px;left:0;right:0;background:#fff;border:0.5px solid var(--sf-border);border-radius:var(--sf-radius);z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.08)">
-                    </div>
+                    <div id="sf-search-dropdown" style="display:none;position:absolute;top:34px;left:0;right:0;background:#fff;border:0.5px solid var(--sf-border);border-radius:var(--sf-radius);z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.08)"></div>
                 </div>
 
                 <div class="sf-topbar-actions">
@@ -181,7 +179,7 @@ else
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@8.0.0/dist/browser/signalr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@@3.49.0/dist/apexcharts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script>
 <script src="~/js/stockflow.js"></script>
 @await RenderSectionAsync("Scripts", required: false)
 

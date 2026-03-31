@@ -2,6 +2,7 @@ using FluentValidation;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -21,7 +22,6 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("Hangfire", LogEventLevel.Warning)
     .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
     .WriteTo.Console(outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}")
     .WriteTo.File("logs/stockflow-.log",
         rollingInterval: RollingInterval.Day,
@@ -32,13 +32,51 @@ Log.Logger = new LoggerConfiguration()
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
+var disableHttps = string.Equals(
+    builder.Configuration["DISABLE_HTTPS_REDIRECT"], "true",
+    StringComparison.OrdinalIgnoreCase);
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string not configured.");
 
+// ── Step 1: Run EF migrations BEFORE registering Hangfire ──────────────────
+// Hangfire's SqlServerStorage.Init() immediately tries to open the DB to set
+// up its schema. If the DB doesn't exist yet, it throws "Cannot open database".
+// We create + migrate the DB here, before the DI container is built, so
+// Hangfire always finds an existing database.
+Log.Information("Applying EF migrations...");
+var migrationOptions = new DbContextOptionsBuilder<AppDbContext>()
+    .UseSqlServer(connectionString)
+    .Options;
+
+const int maxMigrationRetries = 10;
+for (var attempt = 1; attempt <= maxMigrationRetries; attempt++)
+{
+    try
+    {
+        await using var migrationContext = new AppDbContext(migrationOptions);
+        await migrationContext.Database.MigrateAsync();
+        await DbSeeder.SeedAsync(migrationContext);
+        Log.Information("Migrations applied successfully.");
+        break;
+    }
+    catch (Exception ex) when (attempt < maxMigrationRetries)
+    {
+        Log.Warning("Migration attempt {Attempt}/{Max} failed: {Message}. Retrying in 5s...",
+            attempt, maxMigrationRetries, ex.Message);
+        await Task.Delay(TimeSpan.FromSeconds(5));
+    }
+}
+
+// ── Step 2: Register services — DB is guaranteed to exist now ──────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddMemoryCache();
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/dataprotection-keys"))
+    .SetApplicationName("StockFlow");
 
 builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -64,7 +102,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = disableHttps
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Strict;
         options.Cookie.Name = "StockFlow.Auth";
     });
@@ -107,7 +147,9 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "X-CSRF-TOKEN";
     options.Cookie.Name = "StockFlow.Antiforgery";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = disableHttps
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
@@ -135,12 +177,19 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHsts();
+    if (!disableHttps)
+    {
+        app.UseHsts();
+        app.UseHttpsRedirection();
+    }
+}
+else
+{
+    app.UseHttpsRedirection();
 }
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();
@@ -161,16 +210,10 @@ app.MapControllerRoute(
 
 app.MapHub<StockFlowHub>("/hubs/stockflow");
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-
-    var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
-    recurringJobs.AddOrUpdate<ShipmentAlertJob>(
-        "stale-shipment-alert",
-        job => job.RunAsync(),
-        Cron.Daily(2, 0));
-}
+var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobs.AddOrUpdate<ShipmentAlertJob>(
+    "stale-shipment-alert",
+    job => job.RunAsync(),
+    Cron.Daily(2, 0));
 
 await app.RunAsync();

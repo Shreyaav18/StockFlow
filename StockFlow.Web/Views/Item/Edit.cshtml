@@ -1,0 +1,65 @@
+@model StockFlow.Web.DTOs.Item.UpdateItemDto
+@{
+    ViewData["Title"] = "Edit item";
+    ViewData["Breadcrumb"] = "items / edit";
+    var itemId = ViewBag.ItemId;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Edit item</div>
+        <div class="sf-page-sub">Update item details</div>
+    </div>
+    <a href="/Item" class="sf-btn sf-btn-ghost">← Back to items</a>
+</div>
+
+<div style="max-width:560px">
+    <div class="sf-card">
+        <form method="post" action="/Item/Edit/@itemId">
+            @Html.AntiForgeryToken()
+
+            <div class="sf-form-group">
+                <label class="sf-label">Item name <span class="required">*</span></label>
+                <input type="text" name="ItemName" class="sf-input @(ViewData.ModelState["ItemName"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                       value="@Model?.ItemName" required/>
+                @if (ViewData.ModelState["ItemName"]?.Errors.Count > 0)
+                {
+                    <div class="sf-invalid-feedback">@ViewData.ModelState["ItemName"]!.Errors[0].ErrorMessage</div>
+                }
+            </div>
+
+            <div class="sf-form-group">
+                <label class="sf-label">Unit of measurement <span class="required">*</span></label>
+                <select name="Unit" class="sf-select">
+                    @{
+                        var units = new[] { "kg", "g", "lb", "oz", "ton", "unit", "pcs", "box", "pallet" };
+                        foreach (var unit in units)
+                        {
+                            if (Model?.Unit == unit)
+                            {
+                                <option value="@unit" selected>@unit</option>
+                            }
+                            else
+                            {
+                                <option value="@unit">@unit</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="sf-form-group">
+                <label class="sf-flex-center sf-gap-8" style="cursor:pointer;font-size:13px;color:var(--sf-text-secondary)">
+                    <input type="checkbox" name="IsActive" value="true" @(Model?.IsActive == true ? "checked" : "") style="accent-color:#1d6fa8"/>
+                    Item is active
+                </label>
+            </div>
+
+            <hr class="sf-divider"/>
+            <div class="sf-flex-center sf-gap-8">
+                <button type="submit" class="sf-btn sf-btn-primary">Save changes</button>
+                <a href="/Item" class="sf-btn sf-btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,34 @@
+@using StockFlow.Web.Common
+@model PagedResult<dynamic>
+
+@if (Model != null && Model.TotalPages > 1)
+{
+    <div class="sf-pagination">
+        @if (Model.HasPreviousPage)
+        {
+            <a href="?page=@(Model.Page - 1)" class="sf-page-btn">‹</a>
+        }
+        else
+        {
+            <span class="sf-page-btn disabled">‹</span>
+        }
+
+        @for (int i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++)
+        {
+            <a href="?page=@i" class="sf-page-btn @(i == Model.Page ? "active" : "")">@i</a>
+        }
+
+        @if (Model.HasNextPage)
+        {
+            <a href="?page=@(Model.Page + 1)" class="sf-page-btn">›</a>
+        }
+        else
+        {
+            <span class="sf-page-btn disabled">›</span>
+        }
+
+        <span style="margin-left:8px;font-size:11.5px;color:var(--sf-text-muted)">
+            @Model.TotalCount total
+        </span>
+    </div>
+}

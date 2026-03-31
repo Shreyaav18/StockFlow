@@ -1,0 +1,101 @@
+@using StockFlow.Web.DTOs.Shipment
+@{
+    ViewData["Title"] = "Shipments";
+    ViewData["Breadcrumb"] = "warehouse";
+    var shipments = ViewBag.Shipments as IEnumerable<ShipmentViewModel> ?? Enumerable.Empty<ShipmentViewModel>();
+    var search = ViewBag.Search as string;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Shipments</div>
+        <div class="sf-page-sub">@shipments.Count() shipments</div>
+    </div>
+    <a href="/Shipment/Receive" class="sf-btn sf-btn-primary">+ Receive shipment</a>
+</div>
+
+<div class="sf-card">
+    <div class="sf-card-header">
+        <span class="sf-card-title">All shipments</span>
+        <form method="get" action="/Shipment" class="sf-flex-center sf-gap-8">
+            <div class="sf-search-wrap" style="max-width:240px;position:relative">
+                <svg class="sf-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="6" cy="6" r="4"/><path d="M14 14l-3-3"/>
+                </svg>
+                <input type="text" name="search" class="sf-search-input" placeholder="Search item, SKU, status..." value="@search"/>
+            </div>
+            <button type="submit" class="sf-btn sf-btn-ghost sf-btn-sm">Search</button>
+            @if (!string.IsNullOrEmpty(search))
+            {
+                <a href="/Shipment" class="sf-btn sf-btn-ghost sf-btn-sm">Clear</a>
+            }
+        </form>
+    </div>
+
+    @if (shipments.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Shipment ID</th>
+                    <th>Item</th>
+                    <th>SKU</th>
+                    <th>Weight</th>
+                    <th>Received by</th>
+                    <th>Received at</th>
+                    <th>St.</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in shipments)
+                {
+                    <tr>
+                        <td>
+                            <a href="/Shipment/Detail/@s.ShipmentId" class="col-link">SHP-@s.ShipmentId.ToString("D4")</a>
+                            @if (s.IsStale)
+                            {
+                                <span class="sf-badge sf-badge-warning" style="margin-left:6px">Stale</span>
+                            }
+                        </td>
+                        <td>@s.ItemName</td>
+                        <td><span style="font-family:monospace;font-size:12px">@s.SKU</span></td>
+                        <td>@s.TotalWeight @s.Unit</td>
+                        <td class="col-muted">@s.ReceivedByName</td>
+                        <td class="col-muted">@s.ReceivedAt.ToString("dd MMM yyyy")</td>
+                        <td><span class="sf-status @s.Status.Substring(0,1).ToUpper()">@s.Status.Substring(0,1).ToUpper()</span></td>
+                        <td>
+                            <div class="sf-flex-center sf-gap-8">
+                                <a href="/Shipment/Detail/@s.ShipmentId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a>
+                                @if (s.Status == "Pending")
+                                {
+                                    <a href="/Process/Create?shipmentId=@s.ShipmentId" class="sf-btn sf-btn-outline sf-btn-sm">Process</a>
+                                }
+                                @if (User.IsInRole("Admin") && s.Status == "Pending")
+                                {
+                                    <form method="post" action="/Shipment/Delete/@s.ShipmentId" style="display:inline"
+                                          data-sf-confirm="Delete SHP-@s.ShipmentId.ToString("D4")? This cannot be undone.">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="sf-btn sf-btn-danger sf-btn-sm">Delete</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">@(string.IsNullOrEmpty(search) ? "No shipments yet" : "No shipments found for \"" + search + "\"")</div>
+            <div class="sf-empty-state-sub">
+                @if (string.IsNullOrEmpty(search))
+                {
+                    <a href="/Shipment/Receive" class="sf-btn sf-btn-primary sf-mt-8">Receive first shipment</a>
+                }
+            </div>
+        </div>
+    }
+</div>

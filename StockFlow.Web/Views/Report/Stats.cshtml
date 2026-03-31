@@ -1,0 +1,70 @@
+@using StockFlow.Web.DTOs.Report
+@model ProcessingStatsViewModel
+@{
+    ViewData["Title"] = "Processing stats";
+    ViewData["Breadcrumb"] = "reports / stats";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Processing statistics</div>
+        <div class="sf-page-sub">System-wide overview</div>
+    </div>
+    <a href="/Report" class="sf-btn sf-btn-ghost">← Reports</a>
+</div>
+
+<div class="sf-stat-grid">
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Total shipments</div>
+        <div class="sf-stat-value">@Model.TotalShipments</div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Total processed</div>
+        <div class="sf-stat-value">@Model.TotalProcessed</div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Approval rate</div>
+        <div class="sf-stat-value accent">
+            @(Model.TotalProcessed > 0 ? Math.Round((double)Model.TotalApproved / Model.TotalProcessed * 100, 1) : 0)%
+        </div>
+    </div>
+    <div class="sf-stat-card">
+        <div class="sf-stat-label">Weight processed</div>
+        <div class="sf-stat-value">@(Model.TotalWeightProcessed > 1000 ? (Model.TotalWeightProcessed / 1000.0).ToString("F1") + "t" : Model.TotalWeightProcessed.ToString("F0") + "kg")</div>
+    </div>
+</div>
+
+<div class="sf-row sf-row-2 sf-mt-16">
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">Status distribution</span></div>
+        <div id="chart-status" style="min-height:200px"></div>
+    </div>
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">Processing summary</span></div>
+        <table class="sf-table sf-mt-8">
+            <tbody>
+                <tr><td class="col-muted">Total pending</td><td><span class="sf-badge sf-badge-primary">@Model.TotalPending</span></td></tr>
+                <tr><td class="col-muted">Total approved</td><td><span class="sf-badge sf-badge-success">@Model.TotalApproved</span></td></tr>
+                <tr><td class="col-muted">Total rejected</td><td><span class="sf-badge sf-badge-danger">@Model.TotalRejected</span></td></tr>
+                <tr><td class="col-muted">Avg. tree depth</td><td>@Model.AverageProcessingDepth.ToString("F1")</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(function () {
+    new ApexCharts(document.querySelector('#chart-status'), {
+        series: [@Model.TotalApproved, @Model.TotalPending, @Model.TotalRejected],
+        chart: { type: 'donut', height: 200, animations: { enabled: true, speed: 600 } },
+        labels: ['Approved', 'Pending', 'Rejected'],
+        colors: ['#2e7d32', '#1d6fa8', '#c62828'],
+        legend: { position: 'bottom', fontSize: '11px' },
+        plotOptions: { pie: { donut: { size: '60%' } } },
+        dataLabels: { enabled: false },
+        tooltip: { theme: 'light' }
+    }).render();
+});
+</script>
+}

@@ -1,0 +1,62 @@
+@using StockFlow.Web.DTOs.Report
+@model IEnumerable<AuditLogViewModel>
+@{
+    ViewData["Title"] = "Audit logs";
+    ViewData["Breadcrumb"] = "admin / audit";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Audit logs</div>
+        <div class="sf-page-sub">@Model.Count() entries</div>
+    </div>
+    <a href="/Admin" class="sf-btn sf-btn-ghost">← Admin</a>
+</div>
+
+<div class="sf-card">
+    @if (Model.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Entity ID</th>
+                    <th>Performed by</th>
+                    <th>Details</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td class="col-muted">@log.AuditLogId</td>
+                        <td><span class="sf-badge sf-badge-primary">@log.Action</span></td>
+                        <td>
+                            <a href="/Admin/AuditLogsByEntity?entityName=@log.EntityName&entityId=@log.EntityId" class="col-link">
+                                @log.EntityName
+                            </a>
+                        </td>
+                        <td class="col-muted">#@log.EntityId</td>
+                        <td>
+                            <a href="/Admin/AuditLogsByUser?userId=@log.PerformedByName" class="col-link">@log.PerformedByName</a>
+                        </td>
+                        <td class="col-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                            @(log.Details ?? "—")
+                        </td>
+                        <td class="col-muted">@log.PerformedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">No audit logs</div>
+            <div class="sf-empty-state-sub">System activity will appear here.</div>
+        </div>
+    }
+</div>

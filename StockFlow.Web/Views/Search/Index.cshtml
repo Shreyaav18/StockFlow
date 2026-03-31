@@ -1,0 +1,117 @@
+@using StockFlow.Web.DTOs.Search
+@model SearchResultViewModel
+@{
+    ViewData["Title"] = "Search";
+    ViewData["Breadcrumb"] = "search";
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Search</div>
+        @if (Model != null)
+        {
+            <div class="sf-page-sub">@Model.TotalResults results for "@Model.Query"</div>
+        }
+    </div>
+</div>
+
+<div class="sf-card sf-mb-16">
+    <form method="get" action="/Search" class="sf-flex-center sf-gap-8">
+        <div class="sf-search-wrap" style="flex:1;max-width:460px;position:relative">
+            <svg class="sf-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="6" cy="6" r="4"/><path d="M14 14l-3-3"/>
+            </svg>
+            <input type="text" name="Query" class="sf-search-input" placeholder="Search items, shipments, processed records..."
+                   value="@Model?.Query" autofocus/>
+        </div>
+        <label class="sf-flex-center sf-gap-8" style="font-size:12.5px;color:var(--sf-text-secondary);cursor:pointer">
+            <input type="checkbox" name="SearchItems" value="true" @(Model?.SearchItems != false ? "checked" : "") style="accent-color:#1d6fa8"/> Items
+        </label>
+        <label class="sf-flex-center sf-gap-8" style="font-size:12.5px;color:var(--sf-text-secondary);cursor:pointer">
+            <input type="checkbox" name="SearchShipments" value="true" @(Model?.SearchShipments != false ? "checked" : "") style="accent-color:#1d6fa8"/> Shipments
+        </label>
+        <label class="sf-flex-center sf-gap-8" style="font-size:12.5px;color:var(--sf-text-secondary);cursor:pointer">
+            <input type="checkbox" name="SearchProcessedItems" value="true" @(Model?.SearchProcessedItems != false ? "checked" : "") style="accent-color:#1d6fa8"/> Processed
+        </label>
+        <button type="submit" class="sf-btn sf-btn-primary">Search</button>
+    </form>
+</div>
+
+@if (Model != null)
+{
+    @if (Model.Items.Any())
+    {
+        <div class="sf-card sf-mb-16">
+            <div class="sf-card-header"><span class="sf-card-title">Items (@Model.Items.Count())</span></div>
+            <table class="sf-table">
+                <thead><tr><th>Item name</th><th>SKU</th><th>Unit</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var i in Model.Items)
+                    {
+                        <tr>
+                            <td><a href="/Item/Detail/@i.ItemId" class="col-link">@i.ItemName</a></td>
+                            <td style="font-family:monospace;font-size:12px">@i.SKU</td>
+                            <td class="col-muted">@i.Unit</td>
+                            <td><span class="sf-badge @(i.IsActive ? "sf-badge-success" : "sf-badge-muted")">@(i.IsActive ? "Active" : "Inactive")</span></td>
+                            <td><a href="/Item/Detail/@i.ItemId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (Model.Shipments.Any())
+    {
+        <div class="sf-card sf-mb-16">
+            <div class="sf-card-header"><span class="sf-card-title">Shipments (@Model.Shipments.Count())</span></div>
+            <table class="sf-table">
+                <thead><tr><th>Shipment ID</th><th>Item</th><th>Weight</th><th>Received</th><th>St.</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var s in Model.Shipments)
+                    {
+                        <tr>
+                            <td><a href="/Shipment/Detail/@s.ShipmentId" class="col-link">SHP-@s.ShipmentId.ToString("D4")</a></td>
+                            <td>@s.ItemName</td>
+                            <td>@s.TotalWeight @s.Unit</td>
+                            <td class="col-muted">@s.ReceivedAt.ToString("dd MMM")</td>
+                            <td><span class="sf-status @s.Status.Substring(0,1).ToUpper()">@s.Status.Substring(0,1).ToUpper()</span></td>
+                            <td><a href="/Shipment/Detail/@s.ShipmentId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (Model.ProcessedItems.Any())
+    {
+        <div class="sf-card">
+            <div class="sf-card-header"><span class="sf-card-title">Processed items (@Model.ProcessedItems.Count())</span></div>
+            <table class="sf-table">
+                <thead><tr><th>Item</th><th>SKU</th><th>Output wt.</th><th>Processed by</th><th>St.</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.ProcessedItems)
+                    {
+                        <tr>
+                            <td><a href="/Process/Detail/@p.ProcessedItemId" class="col-link">@p.ItemName</a></td>
+                            <td style="font-family:monospace;font-size:12px">@p.SKU</td>
+                            <td>@p.OutputWeight.ToString("F2") @p.Unit</td>
+                            <td class="col-muted">@p.ProcessedByName</td>
+                            <td><span class="sf-status @p.Status.Substring(0,1).ToUpper()">@p.Status.Substring(0,1).ToUpper()</span></td>
+                            <td><a href="/Process/Detail/@p.ProcessedItemId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (Model.TotalResults == 0)
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">No results for "@Model.Query"</div>
+            <div class="sf-empty-state-sub">Try a different search term or check your filters.</div>
+        </div>
+    }
+}
