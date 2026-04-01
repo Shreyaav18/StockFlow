@@ -1,0 +1,53 @@
+@using StockFlow.Web.DTOs.Report
+@model IEnumerable<AuditLogViewModel>
+@{
+    ViewData["Title"] = "Audit logs by user";
+    ViewData["Breadcrumb"] = "admin / audit / user";
+    var user = ViewBag.TargetUser as StockFlow.Web.DTOs.Auth.UserViewModel;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Audit log for @user?.FullName</div>
+        <div class="sf-page-sub">@user?.Email • @user?.Role</div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        <a href="/Admin/AuditLogs" class="sf-btn sf-btn-ghost">← All logs</a>
+        <a href="/Admin/Users" class="sf-btn sf-btn-ghost">← Users</a>
+    </div>
+</div>
+
+<div class="sf-card">
+    @if (Model.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Entity ID</th>
+                    <th>Details</th>
+                    <th>Performed at</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.OrderByDescending(l => l.PerformedAt))
+                {
+                    <tr>
+                        <td><span class="sf-badge sf-badge-primary">@log.Action</span></td>
+                        <td>@log.EntityName</td>
+                        <td><span style="font-family:monospace;font-size:12px">#@log.EntityId</span></td>
+                        <td style="max-width: 30%">@(log.Details ?? "-")</td>
+                        <td class="col-muted">@log.PerformedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">No activity from this user</div>
+        </div>
+    }
+</div>

@@ -1,0 +1,49 @@
+@using StockFlow.Web.DTOs.Report
+@model IEnumerable<AuditLogViewModel>
+@{
+    ViewData["Title"] = "Audit logs by entity";
+    ViewData["Breadcrumb"] = "admin / audit / entity";
+    var entityName = ViewBag.EntityName as string ?? "Entity";
+    var entityId = ViewBag.EntityId as int? ?? 0;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Audit log for @entityName #@entityId</div>
+        <div class="sf-page-sub">All actions performed on this entity</div>
+    </div>
+    <a href="/Admin/AuditLogs" class="sf-btn sf-btn-ghost">← All logs</a>
+</div>
+
+<div class="sf-card">
+    @if (Model.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Details</th>
+                    <th>Performed by</th>
+                    <th>Performed at</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.OrderByDescending(l => l.PerformedAt))
+                {
+                    <tr>
+                        <td><span class="sf-badge sf-badge-primary">@log.Action</span></td>
+                        <td style="max-width: 40%">@(log.Details ?? "-")</td>
+                        <td>@log.PerformedByName</td>
+                        <td class="col-muted">@log.PerformedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">No audit records for this entity</div>
+        </div>
+    }
+</div>
