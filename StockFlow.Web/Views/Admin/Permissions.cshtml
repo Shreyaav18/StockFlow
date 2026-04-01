@@ -1,0 +1,82 @@
+@{
+    ViewData["Title"] = "Permissions matrix";
+    ViewData["Breadcrumb"] = "admin / permissions";
+
+    var adminPerms = ViewBag.AdminPermissions as IEnumerable<string> ?? Enumerable.Empty<string>();
+    var managerPerms = ViewBag.ManagerPermissions as IEnumerable<string> ?? Enumerable.Empty<string>();
+    var staffPerms = ViewBag.StaffPermissions as IEnumerable<string> ?? Enumerable.Empty<string>();
+
+    var allPerms = new[] { adminPerms, managerPerms, staffPerms }
+        .SelectMany(p => p)
+        .Distinct()
+        .OrderBy(p => p)
+        .ToList();
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Permissions matrix</div>
+        <div class="sf-page-sub">Role-based access control overview</div>
+    </div>
+    <a href="/Admin/Users" class="sf-btn sf-btn-ghost">← Users</a>
+</div>
+
+<div class="sf-card">
+    <table class="sf-table">
+        <thead>
+            <tr>
+                <th>Permission</th>
+                <th style="text-align: center; width: 120px">Admin</th>
+                <th style="text-align: center; width: 120px">Manager</th>
+                <th style="text-align: center; width: 120px">Staff</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var perm in allPerms)
+            {
+                <tr>
+                    <td><code style="font-size:12px;background:var(--sf-bg-secondary);padding:2px 6px;border-radius:4px">@perm</code></td>
+                    <td style="text-align: center">
+                        @if (adminPerms.Contains(perm))
+                        {
+                            <span class="sf-badge sf-badge-success">✓</span>
+                        }
+                        else
+                        {
+                            <span class="sf-badge sf-badge-muted">—</span>
+                        }
+                    </td>
+                    <td style="text-align: center">
+                        @if (managerPerms.Contains(perm))
+                        {
+                            <span class="sf-badge sf-badge-success">✓</span>
+                        }
+                        else
+                        {
+                            <span class="sf-badge sf-badge-muted">—</span>
+                        }
+                    </td>
+                    <td style="text-align: center">
+                        @if (staffPerms.Contains(perm))
+                        {
+                            <span class="sf-badge sf-badge-success">✓</span>
+                        }
+                        else
+                        {
+                            <span class="sf-badge sf-badge-muted">—</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="sf-card sf-mt-16">
+    <div class="sf-card-header"><span class="sf-card-title">Role hierarchy</span></div>
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px">
+        <div><span class="sf-badge sf-badge-success" style="background: #2e7d32; color: white">Admin</span> — Full access</div>
+        <div><span class="sf-badge sf-badge-primary" style="background: #1d6fa8; color: white">Manager</span> — Processing approvals, reports, exports</div>
+        <div><span class="sf-badge sf-badge-secondary" style="background: #6c757d; color: white">Staff</span> — Receive, process, view</div>
+    </div>
+</div>

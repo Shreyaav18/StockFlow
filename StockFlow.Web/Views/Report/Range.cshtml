@@ -1,0 +1,76 @@
+@using StockFlow.Web.DTOs.Report
+@model IEnumerable<DailyReportViewModel>
+@{
+    ViewData["Title"] = "Range report";
+    var from = ViewBag.From as DateTime? ?? DateTime.UtcNow.AddDays(-7).Date;
+    var to = ViewBag.To as DateTime? ?? DateTime.UtcNow.Date;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Date range report</div>
+        <div class="sf-page-sub">@from.ToString("dd MMM yyyy") — @to.ToString("dd MMM yyyy")</div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        <a href="/Report/ExportReportPdf?from=@from.ToString("yyyy-MM-dd")&to=@to.ToString("yyyy-MM-dd")" class="sf-btn sf-btn-outline">Export PDF</a>
+        <a href="/Report/ExportReportExcel?from=@from.ToString("yyyy-MM-dd")&to=@to.ToString("yyyy-MM-dd")" class="sf-btn sf-btn-ghost">Export Excel</a>
+        <a href="/Report" class="sf-btn sf-btn-ghost">← Reports</a>
+    </div>
+</div>
+
+<div class="sf-card">
+    @if (Model.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Shipments</th>
+                    <th>Items processed</th>
+                    <th>Approved</th>
+                    <th>Rejected</th>
+                    <th>Pending</th>
+                    <th>Input weight</th>
+                    <th>Output weight</th>
+                    <th>Weight loss</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var report in Model.OrderBy(r => r.Date))
+                {
+                    <tr>
+                        <td><strong>@report.Date.ToString("dd MMM yyyy")</strong></td>
+                        <td>@report.TotalShipmentsReceived</td>
+                        <td>@report.TotalItemsProcessed</td>
+                        <td><span class="sf-badge sf-badge-success">@report.TotalApproved</span></td>
+                        <td><span class="sf-badge sf-badge-danger">@report.TotalRejected</span></td>
+                        <td><span class="sf-badge sf-badge-primary">@report.TotalPending</span></td>
+                        <td>@report.TotalInputWeight.ToString("F1") kg</td>
+                        <td>@report.TotalOutputWeight.ToString("F1") kg</td>
+                        <td>@report.WeightLoss.ToString("F1") kg</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr style="background: var(--sf-bg-secondary)">
+                    <td><strong>Total</strong></td>
+                    <td><strong>@Model.Sum(r => r.TotalShipmentsReceived)</strong></td>
+                    <td><strong>@Model.Sum(r => r.TotalItemsProcessed)</strong></td>
+                    <td><span class="sf-badge sf-badge-success"><strong>@Model.Sum(r => r.TotalApproved)</strong></span></td>
+                    <td><span class="sf-badge sf-badge-danger"><strong>@Model.Sum(r => r.TotalRejected)</strong></span></td>
+                    <td><span class="sf-badge sf-badge-primary"><strong>@Model.Sum(r => r.TotalPending)</strong></span></td>
+                    <td><strong>@Model.Sum(r => r.TotalInputWeight).ToString("F1") kg</strong></td>
+                    <td><strong>@Model.Sum(r => r.TotalOutputWeight).ToString("F1") kg</strong></td>
+                    <td><strong>@Model.Sum(r => r.WeightLoss).ToString("F1") kg</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">No data for this date range</div>
+            <div class="sf-empty-state-sub">Try selecting a different range.</div>
+        </div>
+    }
+</div>

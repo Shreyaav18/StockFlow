@@ -1,0 +1,101 @@
+@using StockFlow.Web.DTOs.Process
+@model ProcessedItemViewModel
+@{
+    ViewData["Title"] = "Processed item detail";
+    var children = ViewBag.Children as IEnumerable<ProcessedItemViewModel> ?? Enumerable.Empty<ProcessedItemViewModel>();
+    var ancestors = ViewBag.Ancestors as IEnumerable<TreeNodeViewModel> ?? Enumerable.Empty<TreeNodeViewModel>();
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">@Model.ItemName</div>
+        <div class="sf-page-sub">
+            Input: @Model.InputWeight.ToString("F2") @Model.Unit →
+            Output: @Model.OutputWeight.ToString("F2") @Model.Unit
+            <span class="sf-status @Model.Status.Substring(0,1).ToUpper()" style="margin-left: 8px">@Model.Status.Substring(0,1).ToUpper()</span>
+        </div>
+    </div>
+    <div class="sf-flex-center sf-gap-8">
+        @if (Model.Status == "Approved" && !Model.HasChildren)
+        {
+            <a href="/Process/Create?shipmentId=@Model.ShipmentId&parentId=@Model.ProcessedItemId" class="sf-btn sf-btn-primary">Process further</a>
+        }
+        <a href="/Shipment/Detail/@Model.ShipmentId" class="sf-btn sf-btn-ghost">View shipment</a>
+    </div>
+</div>
+
+@if (ancestors.Any())
+{
+    <div class="sf-card sf-mb-16">
+        <div class="sf-card-header"><span class="sf-card-title">Processing chain</span></div>
+        <div style="padding: 12px 0">
+            @foreach (var ancestor in ancestors.OrderBy(a => a.Depth))
+            {
+                <span style="display: inline-flex; align-items: center; gap: 8px;">
+                    <a href="/Process/Detail/@ancestor.ProcessedItemId" class="col-link">@ancestor.ItemName</a>
+                    @if (ancestor != ancestors.Last())
+                    {
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l4 4-4 4"/></svg>
+                    }
+                </span>
+            }
+        </div>
+    </div>
+}
+
+<div class="sf-card">
+    <div class="sf-card-header">
+        <span class="sf-card-title">Details</span>
+    </div>
+    <table class="sf-table sf-table-compact">
+        <tbody>
+            <tr><td class="col-muted">Shipment</td><td><a href="/Shipment/Detail/@Model.ShipmentId" class="col-link">SHP-@Model.ShipmentId.ToString("D4")</a></td></tr>
+            <tr><td class="col-muted">Item</td><td>@Model.ItemName <span style="font-family:monospace;font-size:12px;color:var(--sf-text-muted)">@Model.SKU</span></td></tr>
+            <tr><td class="col-muted">Input weight</td><td>@Model.InputWeight.ToString("F2") @Model.Unit</td></tr>
+            <tr><td class="col-muted">Output weight</td><td>@Model.OutputWeight.ToString("F2") @Model.Unit</td></tr>
+            <tr><td class="col-muted">Status</td><td><span class="sf-status @Model.Status.Substring(0,1).ToUpper()">@Model.Status.Substring(0,1).ToUpper()</span></td></tr>
+            <tr><td class="col-muted">Processed by</td><td>@Model.ProcessedByName</td></tr>
+            <tr><td class="col-muted">Processed at</td><td>@Model.ProcessedAt.ToString("dd MMM yyyy, HH:mm")</td></tr>
+            @if (Model.Status == "Rejected")
+            {
+                <tr><td class="col-muted" style="color:var(--sf-danger)">Rejection reason</td><td style="color:var(--sf-danger)">@ViewBag.RejectionReason</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (children.Any())
+{
+    <div class="sf-card sf-mt-16">
+        <div class="sf-card-header"><span class="sf-card-title">Child items (@children.Count())</span></div>
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>SKU</th>
+                    <th>Output weight</th>
+                    <th>Status</th>
+                    <th>Processed by</th>
+                    <th>Processed at</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var child in children)
+                {
+                    <tr>
+                        <td><a href="/Process/Detail/@child.ProcessedItemId" class="col-link">@child.ItemName</a></td>
+                        <td style="font-family:monospace;font-size:12px">@child.SKU</td>
+                        <td>@child.OutputWeight.ToString("F2") @child.Unit</td>
+                        <td><span class="sf-status @child.Status.Substring(0,1).ToUpper()">@child.Status.Substring(0,1).ToUpper()</span></td>
+                        <td class="col-muted">@child.ProcessedByName</td>
+                        <td class="col-muted">@child.ProcessedAt.ToString("dd MMM, HH:mm")</td>
+                        <td>
+                            <a href="/Process/Detail/@child.ProcessedItemId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

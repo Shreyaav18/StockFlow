@@ -1,0 +1,65 @@
+@using StockFlow.Web.DTOs.Shipment
+@{
+    ViewData["Title"] = "Pending shipments";
+    ViewData["Breadcrumb"] = "shipments / pending";
+    var pending = Model as IEnumerable<ShipmentViewModel> ?? Enumerable.Empty<ShipmentViewModel>();
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Pending shipments</div>
+        <div class="sf-page-sub">@pending.Count() shipments awaiting processing</div>
+    </div>
+    <a href="/Shipment" class="sf-btn sf-btn-ghost">← All shipments</a>
+</div>
+
+<div class="sf-card">
+    @if (pending.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Shipment ID</th>
+                    <th>Item</th>
+                    <th>SKU</th>
+                    <th>Weight</th>
+                    <th>Received by</th>
+                    <th>Received at</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in pending)
+                {
+                    <tr>
+                        <td>
+                            <a href="/Shipment/Detail/@s.ShipmentId" class="col-link">SHP-@s.ShipmentId.ToString("D4")</a>
+                            @if (s.IsStale)
+                            {
+                                <span class="sf-badge sf-badge-warning" style="margin-left:6px">Stale</span>
+                            }
+                        </td>
+                        <td>@s.ItemName</td>
+                        <td><span style="font-family:monospace;font-size:12px">@s.SKU</span></td>
+                        <td>@s.TotalWeight @s.Unit</td>
+                        <td class="col-muted">@s.ReceivedByName</td>
+                        <td class="col-muted">@s.ReceivedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <div class="sf-flex-center sf-gap-8">
+                                <a href="/Shipment/Detail/@s.ShipmentId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a>
+                                <a href="/Process/Create?shipmentId=@s.ShipmentId" class="sf-btn sf-btn-outline sf-btn-sm">Process</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">No pending shipments</div>
+            <div class="sf-empty-state-sub">All shipments have been processed.</div>
+        </div>
+    }
+</div>

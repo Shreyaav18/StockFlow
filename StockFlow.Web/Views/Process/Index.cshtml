@@ -1,0 +1,88 @@
+@using StockFlow.Web.DTOs.Process
+@{
+    ViewData["Title"] = "Processed items";
+    ViewData["Breadcrumb"] = "processing / all";
+    var items = ViewBag.ProcessedItems as IEnumerable<ProcessedItemViewModel> ?? Enumerable.Empty<ProcessedItemViewModel>();
+    var search = ViewBag.Search as string;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Processed items</div>
+        <div class="sf-page-sub">@items.Count() items</div>
+    </div>
+</div>
+
+<div class="sf-card">
+    <div class="sf-card-header">
+        <span class="sf-card-title">All processed items</span>
+        <form method="get" action="/Process" class="sf-flex-center sf-gap-8">
+            <div class="sf-search-wrap" style="max-width:240px;position:relative">
+                <svg class="sf-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="6" cy="6" r="4"/><path d="M14 14l-3-3"/>
+                </svg>
+                <input type="text" name="search" class="sf-search-input" placeholder="Search item, SKU..." value="@search"/>
+            </div>
+            <button type="submit" class="sf-btn sf-btn-ghost sf-btn-sm">Search</button>
+            @if (!string.IsNullOrEmpty(search))
+            {
+                <a href="/Process" class="sf-btn sf-btn-ghost sf-btn-sm">Clear</a>
+            }
+        </form>
+    </div>
+
+    @if (items.Any())
+    {
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>SKU</th>
+                    <th>Shipment</th>
+                    <th>Input wt.</th>
+                    <th>Output wt.</th>
+                    <th>Status</th>
+                    <th>Processed by</th>
+                    <th>Processed at</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in items)
+                {
+                    <tr>
+                        <td><a href="/Process/Detail/@item.ProcessedItemId" class="col-link">@item.ItemName</a></td>
+                        <td style="font-family:monospace;font-size:12px">@item.SKU</td>
+                        <td><a href="/Shipment/Detail/@item.ShipmentId" class="col-link">SHP-@item.ShipmentId.ToString("D4")</a></td>
+                        <td>@item.InputWeight.ToString("F2") @item.Unit</td>
+                        <td>@item.OutputWeight.ToString("F2") @item.Unit</td>
+                        <td><span class="sf-status @item.Status.Substring(0,1).ToUpper()">@item.Status.Substring(0,1).ToUpper()</span></td>
+                        <td class="col-muted">@item.ProcessedByName</td>
+                        <td class="col-muted">@item.ProcessedAt.ToString("dd MMM, HH:mm")</td>
+                        <td>
+                            <div class="sf-flex-center sf-gap-8">
+                                <a href="/Process/Detail/@item.ProcessedItemId" class="sf-btn sf-btn-ghost sf-btn-sm">View</a>
+                                @if (item.Status == "Approved" && !item.HasChildren)
+                                {
+                                    <a href="/Process/Create?shipmentId=@item.ShipmentId&parentId=@item.ProcessedItemId" class="sf-btn sf-btn-outline sf-btn-sm">Process further</a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="sf-empty-state">
+            <div class="sf-empty-state-title">@(string.IsNullOrEmpty(search) ? "No processed items yet" : "No items found for \"" + search + "\"")</div>
+            <div class="sf-empty-state-sub">
+                @if (string.IsNullOrEmpty(search))
+                {
+                    <a href="/Shipment" class="sf-btn sf-btn-primary sf-mt-8">View shipments to start processing</a>
+                }
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,99 @@
+@using StockFlow.Web.DTOs.Report
+@model ItemBreakdownViewModel
+@{
+    ViewData["Title"] = "Item breakdown";
+    ViewData["Breadcrumb"] = "reports / item breakdown";
+    var items = ViewBag.Items as IEnumerable<StockFlow.Web.DTOs.Item.ItemViewModel> ?? Enumerable.Empty<StockFlow.Web.DTOs.Item.ItemViewModel>();
+    var from = Model.From;
+    var to = Model.To;
+}
+
+<div class="sf-page-header">
+    <div>
+        <div class="sf-page-title">Item breakdown</div>
+        <div class="sf-page-sub">@Model.ItemName — @from.ToString("dd MMM") to @to.ToString("dd MMM yyyy")</div>
+    </div>
+    <a href="/Report" class="sf-btn sf-btn-ghost">← Reports</a>
+</div>
+
+<div class="sf-row sf-row-2">
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">Summary</span></div>
+        <div class="sf-stat-grid" style="grid-template-columns: repeat(2, 1fr); gap: 16px">
+            <div>
+                <div class="sf-stat-label">Processing count</div>
+                <div class="sf-stat-value">@Model.ProcessingCount</div>
+            </div>
+            <div>
+                <div class="sf-stat-label">Total input</div>
+                <div class="sf-stat-value">@Model.TotalInputWeight.ToString("F1") kg</div>
+            </div>
+            <div>
+                <div class="sf-stat-label">Total output</div>
+                <div class="sf-stat-value">@Model.TotalOutputWeight.ToString("F1") kg</div>
+            </div>
+            <div>
+                <div class="sf-stat-label">Weight loss</div>
+                <div class="sf-stat-value">@(Model.TotalInputWeight - Model.TotalOutputWeight).ToString("F1") kg</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sf-card">
+        <div class="sf-card-header"><span class="sf-card-title">View another item</span></div>
+        <form method="get" action="/Report/ItemBreakdown" class="sf-flex-col" style="gap: 12px">
+            <div class="sf-form-group" style="margin-bottom:0">
+                <label class="sf-label">Item</label>
+                <select name="itemId" class="sf-select" required>
+                    <option value="">— Select item —</option>
+                    @foreach (var item in items)
+                    {
+                        <option value="@item.ItemId" selected="@(item.ItemId == Model.ItemId ? "selected" : null)">@item.ItemName (@item.SKU)</option>
+                    }
+                </select>
+            </div>
+            <div class="sf-flex-center sf-gap-8">
+                <input type="date" name="from" class="sf-input" value="@from.ToString("yyyy-MM-dd")" style="width: auto"/>
+                <span>to</span>
+                <input type="date" name="to" class="sf-input" value="@to.ToString("yyyy-MM-dd")" style="width: auto"/>
+                <button type="submit" class="sf-btn sf-btn-primary">View</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.DailyBreakdown.Any())
+{
+    <div class="sf-card sf-mt-16">
+        <div class="sf-card-header"><span class="sf-card-title">Daily breakdown</span></div>
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Shipments</th>
+                    <th>Input weight</th>
+                    <th>Output weight</th>
+                    <th>Weight loss</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var day in Model.DailyBreakdown.OrderBy(d => d.Date))
+                {
+                    <tr>
+                        <td>@day.Date.ToString("dd MMM yyyy")</td>
+                        <td>1</td>
+                        <td>@day.Weight.ToString("F2") kg</td>
+                        <td>Not tracked</td>
+                        <td>—</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="sf-empty-state">
+        <div class="sf-empty-state-title">No processing data for this item</div>
+    </div>
+}
