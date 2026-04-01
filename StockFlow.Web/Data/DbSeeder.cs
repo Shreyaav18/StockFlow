@@ -116,7 +116,7 @@ namespace StockFlow.Web.Data
 
             var saltShipment = await db.Shipments
                 .Include(s => s.Item)
-                .FirstOrDefaultAsync(s => s.Item.SKU == "SLT-009");
+                .FirstOrDefaultAsync(s => s.Item != null && s.Item.SKU == "SLT-009");
 
             var saltItemId = await db.Items
                 .Where(i => i.SKU == "SLT-009")

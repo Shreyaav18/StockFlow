@@ -59,13 +59,14 @@ namespace StockFlow.Web.Services
                 await _httpContextAccessor.HttpContext!
                     .SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
 
+                var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
                 await _auditLogService.LogAsync(new DTOs.Report.AuditLogDto
                 {
                     EntityName = "User",
                     EntityId = user.UserId,
                     Action = "Login",
                     PerformedBy = user.UserId,
-                    Details = $"Login from {_httpContextAccessor.HttpContext.Connection.RemoteIpAddress}"
+                    Details = $"Login from {ipAddress}"
                 }, ct);
 
                 Log.Information("User {UserId} logged in successfully", user.UserId);
